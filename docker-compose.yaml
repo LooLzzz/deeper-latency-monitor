@@ -17,6 +17,8 @@ services:
     build: ./backend
     container_name: deeper-latency-monitor-be
     env_file: .env
+    environment:
+      - POSTGRES_HOST=deeper-latency-monitor-db
     volumes:
       - ./backend/deeper_latency_monitor_be:/app/src
     ports:
@@ -26,15 +28,10 @@ services:
     restart: unless-stopped
 
   db:
-    image: ghcr.io/muchobien/pocketbase:latest
+    image: postgres:latest
     container_name: deeper-latency-monitor-db
+    env_file: .env
     volumes:
-      - ./database/data:/pb_data
+      - ./database/data:/var/lib/postgresql/data
     ports:
-      - 8090:8090
-    restart: unless-stopped
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:8090/api/health || exit 1
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - 5432:5432
