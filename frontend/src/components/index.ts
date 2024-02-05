@@ -7,5 +7,5 @@ export {
   AppShell,
   BenchmarkSettings,
   CardsManager,
-  SamplingSettings
+  SamplingSettings,
 }

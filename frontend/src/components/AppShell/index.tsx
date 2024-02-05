@@ -12,7 +12,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
     >
 
       <AppShell.Header>
-        <Group h='100%' px='md'>
+        <Group h='100%'>
           <Image
             fill
             src={deeperLogo}
@@ -20,6 +20,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
             style={{
               objectFit: 'contain',
               objectPosition: 'left',
+              paddingLeft: '10px',
             }}
           />
         </Group>
