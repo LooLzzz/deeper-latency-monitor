@@ -3,9 +3,8 @@ import { ColorSwatch } from '@mantine/core'
 interface TrafficLightIconProps {
   value: number
   thresholds: {
-    red: number
-    orange: number
-    green: number
+    high: number
+    low: number
   }
   colors?: {
     red: string
@@ -26,9 +25,9 @@ export default function TrafficLightIcon({
   const activeThresholdColor = (
     value < 0
       ? 'gray'
-      : value > thresholds.red
+      : value > thresholds.high
         ? colors.red
-        : value > thresholds.orange
+        : value > thresholds.low
           ? colors.orange
           : colors.green
   )

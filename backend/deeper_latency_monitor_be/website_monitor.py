@@ -7,60 +7,66 @@ from sqlalchemy.orm import Session
 
 from . import models, os_utils, schemas
 from .handlers import history as history_handlers
+from .settings import Settings
 
 logger = getLogger('uvicorn.website_monitor')
 
 
-def website_monitor_manager(db: Session, stop_event: Event):
+def website_monitor_manager(settings: Settings, db: Session, stop: Event):
     logger.info('Starting website monitor')
 
     with ThreadPoolExecutor(max_workers=10) as executor:
-        tasks: dict[int, tuple[Future, Event]] = {}
+        tasks: dict[int, Future] = {}
 
-        while not stop_event.is_set():
-            db.expire_all()
-            monitored_websites = db.query(models.MonitoredWebsites).all()
+        while not stop.is_set():
+            try:
+                db.expire_all()
+                monitored_websites = db.query(models.MonitoredWebsites).all()
 
-            for website in monitored_websites:
-                match website.is_active:
-                    case True if website.id not in tasks:
-                        # create tasks for newly added websites
-                        stop_event_ = Event()
-                        fut = executor.submit(website_monitor,
-                                              db=db,
-                                              website=website,
-                                              stop_event=stop_event_)
-                        tasks[website.id] = (fut, stop_event_)
+                for website in monitored_websites:
+                    if website.is_active:
+                        fut: Future | None = tasks.get(website.id, None)
+                        fut_done = not fut or fut.done()
 
-                    case False if website.id in tasks:
-                        # stop tasks for inactive websites
-                        fut, stop_event_ = tasks.pop(website.id)
-                        stop_event_.set()
+                        end_time = fut.result() if fut else 0
+                        delta_time = time.time() - end_time
 
-            time.sleep(0.1)
+                        if fut_done and delta_time > settings.ping_interval_sec:
+                            tasks[website.id] = executor.submit(
+                                website_monitor,
+                                db=db,
+                                website=website
+                            )
+                    else:
+                        fut = tasks.pop(website.id, None)
+                        if fut and not fut.done():
+                            fut.cancel()
+
+            except Exception as e:
+                logger.error('Error in website monitor manager: %s', e)
+
+            time.sleep(0.01)
 
         # stop all tasks
-        for fut, stop_event_ in tasks.values():
-            stop_event_.set()
+        for fut in tasks.values():
+            fut.cancel()
 
 
-def website_monitor(db: Session,
-                    website: models.MonitoredWebsites,
-                    stop_event: Event):
-    logger.info('Started monitoring %s', website.url)
-
-    while not stop_event.is_set():
+def website_monitor(db: Session, website: models.MonitoredWebsites):
+    try:
         # ping website and update latency
         logger.debug('Pinging %s', website.url)
         latency_ms = os_utils.ping_website(website.url)
-        logger.debug('Latency for %s: %d ms', website.url, latency_ms)
+        logger.info('Latency for %s: %d ms', website.url, latency_ms)
 
         history_record = schemas.MonitoringHistoryCreate(latency_ms=latency_ms,
                                                          website_id=website.id)
         logger.debug('Creating history record for %s', website.url)
         history_handlers.create_history_record(db, history_record)
 
-        logger.debug('Sleeping for %d seconds', website.frequency_sec)
-        time.sleep(website.frequency_sec)
+        logger.debug('Finished pinging %s', website.url)
+        return time.time()
 
-    logger.info('Stopped monitoring %s', website.url)
+    except Exception as e:
+        logger.error('Error while pinging %s: %s', website.url, e)
+        return time.time()

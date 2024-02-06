@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import models, routes
 from .database import engine, get_db
+from .settings import get_settings
 from .website_monitor import website_monitor_manager
 
 load_dotenv()
@@ -19,9 +20,16 @@ async def lifespan(app: FastAPI):
 
     # start_up
     db = next(get_db())
+    settings = get_settings()
     loop = asyncio.get_event_loop()
     stop_event = Event()
-    future = loop.run_in_executor(None, website_monitor_manager, db, stop_event)
+    future = loop.run_in_executor(
+        None,
+        website_monitor_manager,
+        settings,
+        db,
+        stop_event,
+    )
     yield
 
     # shut_down
@@ -31,8 +39,9 @@ async def lifespan(app: FastAPI):
     future.result()
 
 app = FastAPI(lifespan=lifespan)
-app.include_router(routes.history_router)
+app.include_router(routes.settings_router)
 app.include_router(routes.monitor_router)
+app.include_router(routes.history_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,6 +50,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get('/', status_code=418, include_in_schema=False)
 def root():

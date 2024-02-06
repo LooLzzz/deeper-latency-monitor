@@ -1,23 +1,45 @@
 import { ActionIcon, Center, Card as MantineCard, rem } from '@mantine/core'
+import { modals } from '@mantine/modals'
 import { IconSquarePlus } from '@tabler/icons-react'
+import NewCardForm from './NewCardForm'
 
-export default function EmptyCard() {
+interface EmptyCardProps {
+  loading?: boolean
+  miw?: string
+  mih?: string
+}
+
+export default function EmptyCard({
+  loading = false,
+  miw,
+  mih,
+}: EmptyCardProps) {
+  const handleCreateCard = () => {
+    modals.open({
+      title: 'Create a new monitored website',
+      children: <NewCardForm />
+    })
+  }
+
   return (
-    <MantineCard withBorder padding='lg' radius='md'>
+    <MantineCard
+      withBorder
+      miw={miw}
+      mih={mih}
+      radius='md'
+    >
       <Center h='100%'>
-        {/* <IconCopyPlus */}
         <ActionIcon
+          w='100%'
+          h='100%'
+          onClick={handleCreateCard}
+          loading={loading}
           size={80}
           color='gray'
           variant='light'
           radius='md'
         >
-          <IconSquarePlus
-            style={{
-              width: rem(40),
-              height: rem(40)
-            }}
-          />
+          <IconSquarePlus size={48} />
         </ActionIcon>
       </Center>
     </MantineCard>

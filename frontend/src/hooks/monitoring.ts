@@ -7,13 +7,57 @@ import type {
   MonitoredWebsiteCreate,
   MonitoredWebsiteResponse,
   MonitoredWebsiteUpdate,
+  MonitorSettings,
+  MonitorSettingsUpdate,
 } from '@/types'
 import axios from 'axios'
-import { UseQueryOptions, useMutation, useQuery, useQueryClient } from 'react-query'
+import { useMutation, useQuery, useQueryClient, UseQueryOptions } from 'react-query'
 
 interface PaginationOptions {
   offset?: number
   limit?: number
+}
+
+
+export const useGetMonitorSettings = (options: UseQueryOptions<MonitorSettings> = {}) => {
+  return useQuery<MonitorSettings>(
+    ['settings'],
+    async () => {
+      const resp = await axios.get<MonitorSettings>(apiRoutes.getSettings)
+      return resp.data
+    },
+    {
+      ...options
+    }
+  )
+}
+
+export const useUpdateMonitorSettings = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation<MonitorSettings, unknown, MonitorSettingsUpdate>(
+    async (settings: MonitorSettingsUpdate) => {
+      const resp = await axios.patch(apiRoutes.updateSettings, settings)
+      return resp.data
+    },
+    {
+      onSuccess: (data) => {
+        queryClient.setQueryData(['settings'], data)
+      },
+      onMutate: async (settings) => {
+        // preform optimistic update
+        const previousData = queryClient.getQueryData<MonitorSettings>(['settings'])
+        queryClient.setQueryData(
+          ['settings'],
+          {
+            ...previousData,
+            ...settings,
+          }
+        )
+        return { previousData }
+      },
+    }
+  )
 }
 
 export const useGetWebsiteHistory = (id: number, paginationOptions: PaginationOptions = {}) => {
@@ -132,6 +176,19 @@ export const useDeleteMonitoredWebsite = () => {
       onSuccess: () => {
         queryClient.invalidateQueries(['monitored-websites'])
       },
+      onMutate: (id) => {
+        // preform optimistic update
+        const previousData = queryClient.getQueryData<MonitoredWebsite[]>(
+          ['monitored-websites']
+        )
+        if (previousData) {
+          queryClient.setQueryData<MonitoredWebsite[]>(
+            ['monitored-websites'],
+            previousData.filter((item) => item.id !== id)
+          )
+        }
+        return { previousData }
+      }
     }
   )
 }

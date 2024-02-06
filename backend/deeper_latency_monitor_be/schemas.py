@@ -5,12 +5,19 @@ from pydantic import BaseModel
 from .utils import toCamelCase
 
 
+class SettingsUpdate(BaseModel):
+    low_threshold_ms: float | None = None
+    high_threshold_ms: float | None = None
+    ping_interval_sec: float | None = None
+
+    class Config:
+        alias_generator = toCamelCase
+        allow_population_by_field_name = True
+
+
 class MonitoredWebsitesBase(BaseModel):
     url: str
-    red_threshold_ms: float
-    orange_threshold_ms: float
-    green_threshold_ms: float
-    frequency_sec: float
+    friendly_name: str
     is_active: bool
 
     class Config:
@@ -24,10 +31,7 @@ class MonitoredWebsitesCreate(MonitoredWebsitesBase):
 
 class MonitoredWebsitesUpdate(MonitoredWebsitesBase):
     url: str | None = None
-    red_threshold_ms: float | None = None
-    orange_threshold_ms: float | None = None
-    green_threshold_ms: float | None = None
-    frequency_sec: float | None = None
+    friendly_name: str | None = None
     is_active: bool | None = None
 
 

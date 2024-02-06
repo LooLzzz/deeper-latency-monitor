@@ -12,17 +12,16 @@ class MonitoredWebsites(Base):
 
     id = Column(Integer, primary_key=True)
     url = Column(String, unique=True)
-    red_threshold_ms = Column(Float)
-    orange_threshold_ms = Column(Float)
-    green_threshold_ms = Column(Float)
-    frequency_sec = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    friendly_name = Column(String)
     is_active = Column(Boolean)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime,
+                        default=datetime.now,
+                        onupdate=datetime.now)
 
     history = relationship('MonitoringHistory',
                            back_populates='website',
-                           cascade='all, delete-orphan')
+                           cascade='all, delete')
 
 
 class MonitoringHistory(Base):
@@ -30,8 +29,8 @@ class MonitoringHistory(Base):
 
     id = Column(Integer, primary_key=True)
     latency_ms = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
     website_id = Column(Integer, ForeignKey('monitored_websites.id'))
 
     website = relationship('MonitoredWebsites',
-                            back_populates='history')
+                           back_populates='history')

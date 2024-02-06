@@ -1,125 +1,176 @@
 'use client'
 
-import { useGetLatestWebsiteHistory, useUpdateMonitoredWebsite } from '@/hooks/monitoring'
-import type { MonitoredWebsite } from '@/types'
-import { Group, Card as MantineCard, Progress, Stack, Switch, Text } from '@mantine/core'
-import { IconArrowsExchange, IconCheck, IconCloudNetwork, IconUpload, IconX } from '@tabler/icons-react'
-import { useCallback } from 'react'
+import { useDeleteMonitoredWebsite, useGetLatestWebsiteHistory, useGetMonitorSettings, useUpdateMonitoredWebsite } from '@/hooks/monitoring'
+import type { MonitorSettings, MonitoredWebsite } from '@/types'
+import { ActionIcon, Group, LoadingOverlay, Card as MantineCard, Overlay, Progress, Stack, Switch, Text, Tooltip } from '@mantine/core'
+import { modals } from '@mantine/modals'
+import { IconCalendar, IconInfoCircle, IconPlayerPlayFilled, IconPlayerStopFilled, IconTrash, IconUpload } from '@tabler/icons-react'
+import { useCallback, useEffect } from 'react'
 import TrafficLightIcon from './TrafficLightIcon'
 
 interface CardProps {
+  miw?: string
+  mih?: string
   website: MonitoredWebsite
+  colors?: {
+    red: string
+    orange: string
+    green: string
+  }
 }
 
 export default function Card({
+  miw,
+  mih,
   website: {
     isActive,
+    friendlyName,
     id: websiteId,
     url,
-    redThresholdMs,
-    greenThresholdMs,
-    orangeThresholdMs,
-    frequencySec
-  }
+  },
+  colors = {
+    red: '#c60000',
+    orange: '#df8c36',
+    green: '#1cc95a',
+  },
 }: CardProps) {
-  const { mutate } = useUpdateMonitoredWebsite()
-  const { data: { latencyMs, createdAt } = {}, isLoading } = useGetLatestWebsiteHistory(
+  const { mutate: mutateUpdate } = useUpdateMonitoredWebsite()
+  const { mutate: mutateDelete } = useDeleteMonitoredWebsite()
+  const { data: settings } = useGetMonitorSettings() as { data: MonitorSettings }
+
+  const { data: { latencyMs, createdAt } = {}, isLoading, refetch } = useGetLatestWebsiteHistory(
     websiteId,
     {
       enabled: isActive,
-      refetchInterval: frequencySec * 1000,
+      refetchInterval: settings.pingIntervalSec * 1000, // ms
     }
   )
 
-  const handleSwitchChange = useCallback(() => {
-    mutate({ id: websiteId, isActive: !isActive })
-  }, [mutate, isActive])
-
-  if (isLoading) {
-    return (
-      <MantineCard withBorder padding='lg' radius='md'>
-        <Text fz='lg' fw={500} mt='md'>
-          Loading...
+  const openDeleteModal = () =>
+    modals.openConfirmModal({
+      title: 'Delete website?',
+      centered: true,
+      children: (
+        <Text size='sm'>
+          Are you sure you want to delete this website and all its history?
         </Text>
-      </MantineCard>
-    )
-  }
+      ),
+      labels: { confirm: 'Yeet', cancel: "Nop" },
+      confirmProps: { color: 'red' },
+      onConfirm: () => mutateDelete(websiteId),
+    })
+
+  const handleSwitchChange = useCallback(() => {
+    mutateUpdate({ id: websiteId, isActive: !isActive })
+  }, [mutateUpdate, websiteId, isActive])
+
+  useEffect(() => {
+    refetch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
-    <MantineCard withBorder padding='lg' radius='md'>
-      <Stack gap={5}>
-        <Group justify='space-between'>
-          <Group gap='xs'>
-            <Text>
-              {url}
-            </Text>
-            <TrafficLightIcon
-              value={latencyMs ?? -1}
-              thresholds={{ red: redThresholdMs, orange: orangeThresholdMs, green: greenThresholdMs }}
-            />
-          </Group>
+    <>
+      <MantineCard
+        withBorder
+        miw={miw}
+        mih={mih}
+        padding='lg'
+        radius='md'
+      >
+        <Stack gap={5}>
+          <Group justify='space-between'>
+            <Group gap='xs'>
+              <Group gap={3}>
+                <Tooltip withArrow label={url}>
+                  <IconInfoCircle
+                    cursor='help'
+                    size={15}
+                    color='gray'
+                  />
+                </Tooltip>
+                <Text>
+                  {friendlyName}
+                </Text>
+              </Group>
+              <TrafficLightIcon
+                colors={colors}
+                value={latencyMs ?? -1}
+                thresholds={{
+                  high: settings.highThresholdMs,
+                  low: settings.lowThresholdMs,
+                }}
+              />
+            </Group>
 
-          <Switch
-            checked={isActive}
-            size='md'
-            onChange={handleSwitchChange}
-            // label='Enabled'
-            thumbIcon={
-              isActive
-                ? <IconCheck
-                  color='teal'
-                  size={16}
+            <Group gap={2.5} style={{ zIndex: 201 }}>
+              <Switch
+                checked={isActive}
+                size='md'
+                onChange={handleSwitchChange}
+                onLabel={<IconPlayerPlayFilled size={15} />}
+                offLabel={<IconPlayerStopFilled size={15} />}
+              />
+              <ActionIcon
+                color='gray'
+                variant='transparent'
+                onClick={openDeleteModal}
+              >
+                <IconTrash
+                  size={20}
                   stroke={2.5}
                 />
-                : <IconX
-                  color='red'
-                  size={16}
-                  stroke={2.5}
-                />
-            }
-          />
-        </Group>
+              </ActionIcon>
+            </Group>
+          </Group>
 
-        <Progress value={(23 / 36) * 100} mt={5} />
+          <Progress.Root mt={4}>
+            <Tooltip withArrow label={latencyMs ? `Latency: ${latencyMs} ms` : ''}>
+              <Progress.Section
+                value={(100 * (latencyMs ?? 0) + settings.lowThresholdMs) / settings.highThresholdMs}
+                color={
+                  latencyMs
+                    ? latencyMs > settings.highThresholdMs
+                      ? colors.red
+                      : latencyMs > settings.lowThresholdMs
+                        ? colors.orange
+                        : colors.green
+                    : 'gray'
+                }
+              />
+            </Tooltip>
+          </Progress.Root>
 
-        <Group>
-          <IconUpload
-            color='gray'
-            size={16}
-            stroke={2.5}
-          />
-          <Text>
-            {frequencySec} seconds
-          </Text>
-        </Group>
-
-        <Group>
-          <IconArrowsExchange
-            color='gray'
-            size={16}
-            stroke={2.5}
-          />
-          <Group mt={5} justify='space-between'>
+          <Group>
+            <Tooltip withArrow label='Latency'>
+              <IconUpload
+                color='gray'
+                size={16}
+                stroke={2.5}
+              />
+            </Tooltip>
             <Text>
-              {latencyMs ?? 'N/A'} ms
-            </Text>
-            <Text>
-              {(createdAt as Date).toLocaleString()}
+              {latencyMs ? `${latencyMs} ms` : ''}
             </Text>
           </Group>
-        </Group>
 
-        <Group>
-          <IconCloudNetwork
-            color='gray'
-            size={16}
-            stroke={2.5}
-          />
-          <Text>
-            {redThresholdMs} ms / {orangeThresholdMs} ms
-          </Text>
-        </Group>
-      </Stack>
-    </MantineCard>
+          <Group>
+            <Tooltip withArrow label='Last checked'>
+              <IconCalendar
+                color='gray'
+                size={16}
+                stroke={2.5}
+              />
+            </Tooltip>
+            <Text>
+              {(createdAt as Date)?.toLocaleString()}
+            </Text>
+          </Group>
+        </Stack>
+
+        <LoadingOverlay visible={isLoading} />
+        {!isActive && <Overlay />}
+      </MantineCard>
+    </>
   )
 }

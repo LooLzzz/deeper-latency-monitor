@@ -1,11 +1,20 @@
 
+export interface MonitorSettings {
+  lowThresholdMs: number
+  highThresholdMs: number
+  pingIntervalSec: number
+}
+
+export interface MonitorSettingsUpdate {
+  lowThresholdMs?: number
+  highThresholdMs?: number
+  pingIntervalSec?: number
+}
+
 export interface MonitoredWebsiteResponse {
   url: string
-  redThresholdMs: number
-  orangeThresholdMs: number
-  greenThresholdMs: number
-  frequencySec: number
   isActive: boolean
+  friendlyName: string
   id: number
   createdAt: string
   updatedAt: string
@@ -18,20 +27,15 @@ export interface MonitoredWebsite extends MonitoredWebsiteResponse {
 
 export interface MonitoredWebsiteCreate {
   url: string
-  redThresholdMs: number
-  orangeThresholdMs: number
-  greenThresholdMs: number
-  frequencySec: number
+  friendlyName: string
   isActive: boolean
 }
+
 export interface MonitoredWebsiteUpdate {
   id: number
   url?: string
-  redThresholdMs?: number
-  orangeThresholdMs?: number
-  greenThresholdMs?: number
-  frequencySec?: number
   isActive?: boolean
+  friendlyName?: string
 }
 
 export interface HistoryRecordResponse {
