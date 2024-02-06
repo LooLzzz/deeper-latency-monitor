@@ -9,7 +9,7 @@ import type {
   MonitoredWebsiteUpdate,
 } from '@/types'
 import axios from 'axios'
-import { useMutation, useQuery, useQueryClient } from 'react-query'
+import { UseQueryOptions, useMutation, useQuery, useQueryClient } from 'react-query'
 
 interface PaginationOptions {
   offset?: number
@@ -62,7 +62,7 @@ export const useClearWebsiteHistory = () => {
   )
 }
 
-export const useGetLatestWebsiteHistory = (id: number) => {
+export const useGetLatestWebsiteHistory = (id: number, options: UseQueryOptions<HistoryRecord> = {}) => {
   return useQuery<HistoryRecord>(
     ['history', id, 'latest'],
     async () => {
@@ -73,22 +73,31 @@ export const useGetLatestWebsiteHistory = (id: number) => {
         ...resp.data,
         createdAt: new Date(resp.data.createdAt),
       }
+    },
+    {
+      ...options
     }
   )
 }
 
-export const useGetAllMonitoredWebsites = () => {
+export const useGetAllMonitoredWebsites = (options: UseQueryOptions<MonitoredWebsite[]> = {}) => {
   return useQuery<MonitoredWebsite[]>(
     ['monitored-websites'],
     async () => {
       const resp = await axios.get<MonitoredWebsiteResponse[]>(
         apiRoutes.getAllMonitoredWebsites,
       )
-      return resp.data.map((website) => ({
-        ...website,
-        createdAt: new Date(website.createdAt),
-        updatedAt: new Date(website.updatedAt),
-      }))
+      return resp
+        .data
+        .map((website) => ({
+          ...website,
+          createdAt: new Date(website.createdAt),
+          updatedAt: new Date(website.updatedAt),
+        }))
+        .sort((a, b) => a.id - b.id)
+    },
+    {
+      ...options
     }
   )
 }
@@ -146,6 +155,23 @@ export const useUpdateMonitoredWebsite = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['monitored-websites'])
+      },
+      onMutate: async (website) => {
+        // preform optimistic update
+
+        await queryClient.cancelQueries(['history', website.id])
+        const previousData = queryClient.getQueryData<MonitoredWebsite[]>(
+          ['monitored-websites']
+        )
+        if (previousData) {
+          queryClient.setQueryData<MonitoredWebsite[]>(
+            ['monitored-websites'],
+            previousData.map((item) =>
+              item.id === website.id ? { ...item, ...website } : item
+            )
+          )
+        }
+        return { previousData }
       },
     }
   )
