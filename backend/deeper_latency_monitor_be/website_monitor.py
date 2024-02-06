@@ -7,6 +7,7 @@ from threading import Event
 from sqlalchemy.orm import Session
 
 from . import handlers, models, os_utils, schemas
+from .handlers import history as history_handlers
 
 logger = getLogger('uvicorn.website_monitor')
 
@@ -18,24 +19,24 @@ def website_monitor_manager(db: Session, stop_event: Event):
         tasks: dict[int, tuple[Future, Event]] = {}
 
         while not stop_event.is_set():
-            monitored_websites = (db.query(models.MonitoredWebsites)
-                                    .filter(models.MonitoredWebsites.is_active)
-                                    .all())
+            monitored_websites = db.query(models.MonitoredWebsites).all()
+            db.refresh(monitored_websites)
 
             for website in monitored_websites:
-                # create tasks for newly added websites
-                if website.id not in tasks:
-                    stop_event_ = Event()
-                    fut = executor.submit(website_monitor,
-                                          db=db,
-                                          website=website,
-                                          stop_event=stop_event_)
-                    tasks[website.id] = (fut, stop_event_)
+                match website.is_active:
+                    case True if website.id not in tasks:
+                        # create tasks for newly added websites
+                        stop_event_ = Event()
+                        fut = executor.submit(website_monitor,
+                                              db=db,
+                                              website=website,
+                                              stop_event=stop_event_)
+                        tasks[website.id] = (fut, stop_event_)
 
-                # remove tasks for inactive websites
-                if not website.is_active:
-                    fut, stop_event_ = tasks.pop(website.id)
-                    stop_event_.set()
+                    case False if website.id in tasks:
+                        # remove tasks for inactive websites
+                        fut, stop_event_ = tasks.pop(website.id)
+                        stop_event_.set()
 
             time.sleep(0)
 
@@ -59,7 +60,7 @@ def website_monitor(db: Session,
                                                          timestamp=datetime.utcnow(),
                                                          website_id=website.id)
         logger.debug('Creating history record for %s', website.url)
-        handlers.create_history_record(db, history_record)
+        history_handlers.create_history_record(db, history_record)
 
         logger.debug('Sleeping for %d seconds', website.frequency_sec)
         time.sleep(website.frequency_sec)

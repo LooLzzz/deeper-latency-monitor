@@ -20,8 +20,7 @@ async def lifespan(app: FastAPI):
     db = next(get_db())
     loop = asyncio.get_event_loop()
     stop_event = Event()
-    future = loop.run_in_executor(
-        None, website_monitor_manager, db, stop_event)
+    future = loop.run_in_executor(None, website_monitor_manager, db, stop_event)
     yield
 
     # shut_down

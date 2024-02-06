@@ -17,7 +17,7 @@ class MonitoredWebsitesCreate(MonitoredWebsitesBase):
 
 
 class MonitoredWebsitesUpdate(MonitoredWebsitesBase):
-    url: str
+    url: str | None = None
     red_threshold_sec: float | None = None
     orange_threshold_sec: float | None = None
     green_threshold_sec: float | None = None
