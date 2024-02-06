@@ -7,7 +7,7 @@ from ..handlers import monitor as monitor_handlers
 router = APIRouter(prefix='/monitor', tags=['Monitor'])
 
 
-@router.get('/')
+@router.get('/', response_model=list[schemas.MonitoredWebsitesView])
 def get_all_monitored_websites(db=Depends(get_db)):
     return monitor_handlers.get_all_monitored_websites(db)
 
@@ -17,7 +17,7 @@ def delete_monitored_website(website_id: int, db=Depends(get_db)):
     return monitor_handlers.delete_monitored_website(db, website_id)
 
 
-@router.put('/')
+@router.put('/', response_model=schemas.MonitoredWebsitesView)
 def create_monitored_website(website: schemas.MonitoredWebsitesCreate, db=Depends(get_db)):
     return monitor_handlers.create_monitored_website(db, website)
 

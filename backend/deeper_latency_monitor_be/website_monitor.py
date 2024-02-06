@@ -1,12 +1,11 @@
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
-from datetime import datetime
 from logging import getLogger
 from threading import Event
 
 from sqlalchemy.orm import Session
 
-from . import handlers, models, os_utils, schemas
+from . import models, os_utils, schemas
 from .handlers import history as history_handlers
 
 logger = getLogger('uvicorn.website_monitor')
@@ -19,8 +18,8 @@ def website_monitor_manager(db: Session, stop_event: Event):
         tasks: dict[int, tuple[Future, Event]] = {}
 
         while not stop_event.is_set():
+            db.expire_all()
             monitored_websites = db.query(models.MonitoredWebsites).all()
-            db.refresh(monitored_websites)
 
             for website in monitored_websites:
                 match website.is_active:
@@ -34,11 +33,11 @@ def website_monitor_manager(db: Session, stop_event: Event):
                         tasks[website.id] = (fut, stop_event_)
 
                     case False if website.id in tasks:
-                        # remove tasks for inactive websites
+                        # stop tasks for inactive websites
                         fut, stop_event_ = tasks.pop(website.id)
                         stop_event_.set()
 
-            time.sleep(0)
+            time.sleep(0.1)
 
         # stop all tasks
         for fut, stop_event_ in tasks.values():
@@ -56,8 +55,7 @@ def website_monitor(db: Session,
         latency_ms = os_utils.ping_website(website.url)
         logger.debug('Latency for %s: %d ms', website.url, latency_ms)
 
-        history_record = schemas.MonitoringHistoryCreate(latency_sec=latency_ms/1000,
-                                                         timestamp=datetime.utcnow(),
+        history_record = schemas.MonitoringHistoryCreate(latency_ms=latency_ms,
                                                          website_id=website.id)
         logger.debug('Creating history record for %s', website.url)
         history_handlers.create_history_record(db, history_record)

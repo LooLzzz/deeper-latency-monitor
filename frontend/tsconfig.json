@@ -19,11 +19,13 @@
     ],
     "paths": {
       "@/*": ["/*"],
-      "@/public/*": ["../public/*"],
-      "@/components/*": ["components/*"],
-      "@/components": ["components"],
-      "@/api/*": ["app/api/*"],
       "@/api": ["app/api"],
+      "@/api/*": ["app/api/*"],
+      "@/components": ["components"],
+      "@/components/*": ["components/*"],
+      "@/public/*": ["../public/*"],
+      "@/types": ["types"],
+      "@/types/*": ["types/*"],
     },
     "baseUrl": "./src"
   },
