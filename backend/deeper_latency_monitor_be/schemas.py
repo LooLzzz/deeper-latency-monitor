@@ -59,3 +59,11 @@ class MonitoringHistoryView(MonitoringHistoryBase):
 
     class Config:
         orm_mode = True
+
+
+class AffectedRows(BaseModel):
+    affected_rows: int
+
+    class Config:
+        alias_generator = toCamelCase
+        allow_population_by_field_name = True

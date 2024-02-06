@@ -6,6 +6,8 @@ services:
     build: ./frontend
     container_name: deeper-latency-monitor-fe
     env_file: .env
+    environment:
+      - BACKEND_HOST=deeper-latency-monitor-be
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public

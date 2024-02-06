@@ -12,7 +12,7 @@ def get_all_monitored_websites(db=Depends(get_db)):
     return monitor_handlers.get_all_monitored_websites(db)
 
 
-@router.delete('/{website_id}')
+@router.delete('/{website_id}', response_model=schemas.AffectedRows)
 def delete_monitored_website(website_id: int, db=Depends(get_db)):
     return monitor_handlers.delete_monitored_website(db, website_id)
 
@@ -22,6 +22,6 @@ def create_monitored_website(website: schemas.MonitoredWebsitesCreate, db=Depend
     return monitor_handlers.create_monitored_website(db, website)
 
 
-@router.patch('/{website_id}')
+@router.patch('/{website_id}', response_model=schemas.AffectedRows)
 def update_monitored_website(website_id: int, website: schemas.MonitoredWebsitesUpdate, db=Depends(get_db)):
     return monitor_handlers.update_monitored_website(db, website_id, website)

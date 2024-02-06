@@ -25,4 +25,4 @@ def clear_website_history(db: Session, website_id: int):
                    .filter(models.MonitoringHistory.website_id == website_id)
                    .delete())
     db.commit()
-    return row_count
+    return schemas.AffectedRows(affected_rows=row_count)

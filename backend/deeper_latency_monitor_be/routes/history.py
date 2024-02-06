@@ -23,6 +23,6 @@ def get_latest_website_history(website_id: int, db=Depends(get_db)):
     return res[0]
 
 
-@router.delete('/{website_id}')
+@router.delete('/{website_id}', response_model=schemas.AffectedRows)
 def clear_website_history(website_id: int, db=Depends(get_db)):
     return history_handlers.clear_website_history(db, website_id)

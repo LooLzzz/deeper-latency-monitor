@@ -20,7 +20,7 @@ def delete_monitored_website(db: Session, website_id: int):
                    .filter(models.MonitoredWebsites.id == website_id)
                    .delete())
     db.commit()
-    return row_count
+    return schemas.AffectedRows(affected_rows=row_count)
 
 
 def update_monitored_website(db: Session, website_id: int, website: schemas.MonitoredWebsitesUpdate):
@@ -28,4 +28,4 @@ def update_monitored_website(db: Session, website_id: int, website: schemas.Moni
                    .filter(models.MonitoredWebsites.id == website_id)
                    .update(website.dict(exclude_unset=True)))
     db.commit()
-    return row_count
+    return schemas.AffectedRows(affected_rows=row_count)

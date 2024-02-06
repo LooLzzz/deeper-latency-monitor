@@ -16,11 +16,34 @@ export interface MonitoredWebsite extends MonitoredWebsiteResponse {
   updatedAt: Date
 }
 
+export interface MonitoredWebsiteCreate {
+  url: string
+  redThresholdMs: number
+  orangeThresholdMs: number
+  greenThresholdMs: number
+  frequencySec: number
+  isActive: boolean
+}
+export interface MonitoredWebsiteUpdate {
+  id: number
+  url?: string
+  redThresholdMs?: number
+  orangeThresholdMs?: number
+  greenThresholdMs?: number
+  frequencySec?: number
+  isActive?: boolean
+}
+
 export interface HistoryRecordResponse {
   latencyMs: number
   websiteId: number
   id: number
   createdAt: string
+}
+
+export interface HistoryRecordClearResponse {
+  affectedRows: number
+  id: number
 }
 
 export interface HistoryRecord extends HistoryRecordResponse {
