@@ -72,11 +72,17 @@ export default function AppSettings() {
             <Slider
               w='100%'
               disabled={isLoading}
-              label={v => `${v.toFixed(1)} sec`}
               value={isLoading ? 0 : sliderValue}
-              min={0.5}
-              max={60}
+              min={1}
+              max={3600}
               step={0.1}
+              label={v => (
+                v < 60
+                  ? `${v} sec`
+                  : v < 3600
+                    ? `${(v / 60).toFixed(2)} min`
+                    : `${(v / 3600).toFixed(2)} hr`
+              )}
               onChange={setSliderValue}
               onChangeEnd={value => {
                 mutate({ pingIntervalSec: value })
