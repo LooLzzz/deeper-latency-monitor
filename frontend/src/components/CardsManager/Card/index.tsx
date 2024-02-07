@@ -1,5 +1,6 @@
 'use client'
 
+import { EditableText } from '@/components'
 import { useDeleteMonitoredWebsite, useGetLatestWebsiteHistory, useGetMonitorSettings, useUpdateMonitoredWebsite } from '@/hooks/monitoring'
 import { useAppSettingsStore } from '@/store/zustand'
 import type { MonitorSettings, MonitoredWebsite } from '@/types'
@@ -95,9 +96,10 @@ export default function Card({
                     color='gray'
                   />
                 </Tooltip>
-                <Text>
-                  {friendlyName}
-                </Text>
+                <EditableText
+                  initialValue={friendlyName}
+                  onSave={(newName) => mutateUpdate({ id: websiteId, friendlyName: newName })}
+                />
               </Group>
               <TrafficLightIcon
                 colors={colors}
@@ -114,6 +116,7 @@ export default function Card({
                 checked={isActive}
                 size='md'
                 onChange={handleSwitchChange}
+                disabled={isActive && (isLoading || !latencyMs || !createdAt)}
                 onLabel={<IconPlayerPlayFilled size={15} />}
                 offLabel={<IconPlayerStopFilled size={15} />}
               />
@@ -174,7 +177,7 @@ export default function Card({
           </Group>
         </Stack>
 
-        <LoadingOverlay visible={isLoading} />
+        <LoadingOverlay visible={isActive && (isLoading || !latencyMs || !createdAt)} zIndex={99} />
         {!isActive && <Overlay />}
       </MantineCard>
     </>

@@ -21,7 +21,7 @@ SQLALCHEMY_DATABASE_URI = PostgresDsn.build(
 engine = create_engine(
     url=SQLALCHEMY_DATABASE_URI,
 )
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)
 
 Base = declarative_base()
 

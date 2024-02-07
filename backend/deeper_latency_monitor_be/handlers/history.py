@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import Literal
 
 from sqlalchemy.orm import Session
@@ -15,7 +16,10 @@ def get_website_history(db: Session, website_id: int, offset: int = 0, limit: in
               .all())
 
 
-def get_latest_website_history(db: Session, website_id: int, kind: Literal['latest', 'avg']):
+def get_latest_website_history(db: Session,
+                               website_id: int,
+                               kind: Literal['latest', 'avg'],
+                               avg_timeframe: timedelta = timedelta(seconds=120)):
     latest = (db.query(models.MonitoringHistory)
                 .filter(models.MonitoringHistory.website_id == website_id)
                 .order_by(models.MonitoringHistory.created_at.desc())
@@ -23,14 +27,17 @@ def get_latest_website_history(db: Session, website_id: int, kind: Literal['late
 
     if latest and kind == 'avg':
         avg_latency = (db.query(func.avg(models.MonitoringHistory.latency_ms))
-                         .filter(models.MonitoringHistory.website_id == website_id)
+                         .filter(models.MonitoringHistory.website_id == website_id,
+                                 models.MonitoringHistory.created_at > datetime.now() - avg_timeframe)
                          .scalar())
-        return schemas.MonitoringHistoryView(
-            id=latest.id,
-            website_id=website_id,
-            latency_ms=round(avg_latency, 1),
-            created_at=latest.created_at,
-        )
+
+        if avg_latency:
+            return schemas.MonitoringHistoryView(
+                id=latest.id,
+                website_id=website_id,
+                latency_ms=avg_latency,
+                created_at=latest.created_at,
+            )
 
     return latest
 

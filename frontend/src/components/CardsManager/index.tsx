@@ -21,7 +21,7 @@ export default function CardsManager() {
               website={website}
               className={lessAnimations ? undefined : classes.item}
               miw={rem(300)}
-              mih={rem(145)}
+              mih={rem(150)}
             />
           ))
         }
@@ -30,7 +30,7 @@ export default function CardsManager() {
           loading={isLoading}
           className={lessAnimations ? undefined : classes.item}
           miw={rem(300)}
-          mih={rem(145)}
+          mih={rem(150)}
         />
       </SimpleGrid>
     </div>

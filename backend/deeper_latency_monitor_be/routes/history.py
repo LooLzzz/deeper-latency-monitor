@@ -22,6 +22,8 @@ def get_latest_website_history(website_id: int, kind: Literal['latest', 'avg'] =
             status_code=404,
             detail=f'No history found for website with id {website_id}',
         )
+    if res.latency_ms:
+        res.latency_ms = round(res.latency_ms, 2)
     return res
 
 
