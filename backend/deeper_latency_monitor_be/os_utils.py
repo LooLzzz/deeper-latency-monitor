@@ -8,7 +8,7 @@ def ping_website(url: str, num_of_pings: int = 1):
 
     cmd = ['ping', url]
     if platform.system() == 'Linux':
-        cmd.insert(1, f'-c={num_of_pings}')
+        cmd = ['ping', '-c', str(num_of_pings), url]
 
     process = subprocess.Popen(cmd,
                                text=True,

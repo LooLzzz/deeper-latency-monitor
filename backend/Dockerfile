@@ -14,6 +14,7 @@ ENV PYTHONFAULTHANDLER=1 \
   POETRY_VERSION=1.7.1
 
 # System deps:
+RUN apt update && apt install inetutils-ping
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
 # Copy only requirements to cache them in docker layer

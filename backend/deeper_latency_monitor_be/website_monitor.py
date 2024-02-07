@@ -73,5 +73,5 @@ def website_monitor(website: models.MonitoredWebsites):
 
     except Exception as e:
         if 'is not present in table' not in str(e):
-            logger.error('Error while pinging %s: %s', website.url, e)
+            logger.error('Error while pinging %s: %r', website.url, e)
         return time.time()
