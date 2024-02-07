@@ -1,10 +1,12 @@
 'use client'
 
 import { useGetMonitorSettings, useUpdateMonitorSettings } from '@/hooks/monitoring'
-import { Center, Group, Card as MantineCard, RangeSlider, Slider, Stack, Text } from '@mantine/core'
+import { useAppSettingsStore } from '@/store/zustand'
+import { Center, Group, Card as MantineCard, RangeSlider, Select, Slider, Stack, Switch, Text, Title } from '@mantine/core'
 import { useEffect, useState } from 'react'
 
-export default function SamplingSettings() {
+export default function AppSettings() {
+  const { lessAnimations, latencyAggregateType, toggleLessAnimations, setLatencyAggregateType } = useAppSettingsStore()
   const { data: settings, isLoading } = useGetMonitorSettings()
   const { mutate } = useUpdateMonitorSettings()
 
@@ -20,8 +22,38 @@ export default function SamplingSettings() {
 
   return (
     <Center w='100%'>
-      <MantineCard withBorder padding='lg' radius='md' miw={500} mih={140} style={{ justifyContent: 'center' }}>
-        <Stack gap={'xl'}>
+      <MantineCard withBorder padding='lg' radius='md' miw={500} style={{ justifyContent: 'center' }}>
+        <Group>
+          <Title size={30}>App Settings</Title>
+        </Group>
+
+        <Stack gap={'xl'} py='md'>
+          <Group wrap='nowrap' gap='xs'>
+            <Text size='sm' style={{ whiteSpace: 'nowrap' }}>
+              Latency aggregate type
+            </Text>
+            <Select
+              w='100%'
+              data={[
+                { value: 'latest', label: 'Latest' },
+                { value: 'avg', label: 'Average' },
+              ]}
+              value={latencyAggregateType}
+              onChange={(value) => setLatencyAggregateType(value as 'latest' | 'avg')}
+              disabled={isLoading}
+              placeholder='Select latency aggregate type'
+            />
+          </Group>
+
+          <Switch
+            checked={lessAnimations}
+            onChange={toggleLessAnimations}
+            label='Use less animations'
+            color='red'
+            labelPosition='left'
+            disabled={isLoading}
+          />
+
           <Group wrap='nowrap' gap='xs'>
             <Text size='sm' style={{ whiteSpace: 'nowrap' }}>
               Ping Interval
@@ -46,7 +78,7 @@ export default function SamplingSettings() {
               Latency Threshold
             </Text>
             <RangeSlider
-            inverted 
+              inverted
               w='100%'
               disabled={isLoading}
               onChange={setRangeSliderValue}

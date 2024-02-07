@@ -1,4 +1,4 @@
-import { CardsManager, SamplingSettings } from '@/components'
+import { CardsManager, AppSettings } from '@/components'
 import { Center, Group, Stack } from '@mantine/core'
 
 export default function Home() {
@@ -6,7 +6,7 @@ export default function Home() {
     <Center>
       <Stack>
         <Group>
-          <SamplingSettings />
+          <AppSettings />
         </Group>
         <CardsManager />
       </Stack>

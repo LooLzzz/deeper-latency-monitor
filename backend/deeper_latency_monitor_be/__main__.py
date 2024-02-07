@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import models, routes
-from .database import engine, get_db
+from .database import engine
 from .settings import get_settings
 from .website_monitor import website_monitor_manager
 
@@ -19,7 +19,6 @@ models.Base.metadata.create_all(bind=engine)
 async def lifespan(app: FastAPI):
 
     # start_up
-    db = next(get_db())
     settings = get_settings()
     loop = asyncio.get_event_loop()
     stop_event = Event()
@@ -27,7 +26,6 @@ async def lifespan(app: FastAPI):
         None,
         website_monitor_manager,
         settings,
-        db,
         stop_event,
     )
     yield

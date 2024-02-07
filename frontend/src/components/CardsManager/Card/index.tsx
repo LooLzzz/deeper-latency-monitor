@@ -1,6 +1,7 @@
 'use client'
 
 import { useDeleteMonitoredWebsite, useGetLatestWebsiteHistory, useGetMonitorSettings, useUpdateMonitoredWebsite } from '@/hooks/monitoring'
+import { useAppSettingsStore } from '@/store/zustand'
 import type { MonitorSettings, MonitoredWebsite } from '@/types'
 import { ActionIcon, Group, LoadingOverlay, Card as MantineCard, Overlay, Progress, Stack, Switch, Text, Tooltip } from '@mantine/core'
 import { modals } from '@mantine/modals'
@@ -12,6 +13,7 @@ interface CardProps {
   miw?: string
   mih?: string
   website: MonitoredWebsite
+  className?: string
   colors?: {
     red: string
     orange: string
@@ -22,6 +24,7 @@ interface CardProps {
 export default function Card({
   miw,
   mih,
+  className,
   website: {
     isActive,
     friendlyName,
@@ -34,12 +37,14 @@ export default function Card({
     green: '#1cc95a',
   },
 }: CardProps) {
+  const { latencyAggregateType } = useAppSettingsStore()
   const { mutate: mutateUpdate } = useUpdateMonitoredWebsite()
   const { mutate: mutateDelete } = useDeleteMonitoredWebsite()
   const { data: settings } = useGetMonitorSettings() as { data: MonitorSettings }
 
   const { data: { latencyMs, createdAt } = {}, isLoading, refetch } = useGetLatestWebsiteHistory(
     websiteId,
+    latencyAggregateType,
     {
       enabled: isActive,
       refetchInterval: settings.pingIntervalSec * 1000, // ms
@@ -77,6 +82,7 @@ export default function Card({
         mih={mih}
         padding='lg'
         radius='md'
+        className={className}
       >
         <Stack gap={5}>
           <Group justify='space-between'>

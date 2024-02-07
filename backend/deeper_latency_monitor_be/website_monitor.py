@@ -3,16 +3,19 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from logging import getLogger
 from threading import Event
 
+from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
 from . import models, os_utils, schemas
+from .database import get_db
 from .handlers import history as history_handlers
 from .settings import Settings
 
 logger = getLogger('uvicorn.website_monitor')
 
 
-def website_monitor_manager(settings: Settings, db: Session, stop: Event):
+def website_monitor_manager(settings: Settings, stop: Event):
+    db = next(get_db())
     logger.info('Starting website monitor')
 
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -32,11 +35,7 @@ def website_monitor_manager(settings: Settings, db: Session, stop: Event):
                         delta_time = time.time() - end_time
 
                         if fut_done and delta_time > settings.ping_interval_sec:
-                            tasks[website.id] = executor.submit(
-                                website_monitor,
-                                db=db,
-                                website=website
-                            )
+                            tasks[website.id] = executor.submit(website_monitor, website)
                     else:
                         fut = tasks.pop(website.id, None)
                         if fut and not fut.done():
@@ -52,17 +51,22 @@ def website_monitor_manager(settings: Settings, db: Session, stop: Event):
             fut.cancel()
 
 
-def website_monitor(db: Session, website: models.MonitoredWebsites):
+def website_monitor(website: models.MonitoredWebsites):
     try:
+        db = next(get_db())
+
         # ping website and update latency
         logger.debug('Pinging %s', website.url)
         latency_ms = os_utils.ping_website(website.url)
-        logger.info('Latency for %s: %d ms', website.url, latency_ms)
+        logger.info('Latency for %s: %d ms', website.friendly_name, latency_ms)
 
         history_record = schemas.MonitoringHistoryCreate(latency_ms=latency_ms,
                                                          website_id=website.id)
-        logger.debug('Creating history record for %s', website.url)
-        history_handlers.create_history_record(db, history_record)
+
+        is_deleted = inspect(website).deleted
+        if not is_deleted:
+            logger.debug('Creating history record for %s', website.url)
+            history_handlers.create_history_record(db, history_record)
 
         logger.debug('Finished pinging %s', website.url)
         return time.time()

@@ -106,12 +106,13 @@ export const useClearWebsiteHistory = () => {
   )
 }
 
-export const useGetLatestWebsiteHistory = (id: number, options: UseQueryOptions<HistoryRecord> = {}) => {
+export const useGetLatestWebsiteHistory = (id: number, kind: 'latest' | 'avg', options: UseQueryOptions<HistoryRecord> = {}) => {
   return useQuery<HistoryRecord>(
-    ['history', id, 'latest'],
+    ['history', id, 'latest', kind],
     async () => {
       const resp = await axios.get<HistoryRecordResponse>(
         apiRoutes.getLatestWebsiteHistory(id),
+        { params: { kind } },
       )
       return {
         ...resp.data,

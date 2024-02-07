@@ -5,12 +5,14 @@ import NewCardForm from './NewCardForm'
 
 interface EmptyCardProps {
   loading?: boolean
+  className?: string
   miw?: string
   mih?: string
 }
 
 export default function EmptyCard({
   loading = false,
+  className,
   miw,
   mih,
 }: EmptyCardProps) {
@@ -24,6 +26,7 @@ export default function EmptyCard({
   return (
     <MantineCard
       withBorder
+      className={className}
       miw={miw}
       mih={mih}
       radius='md'

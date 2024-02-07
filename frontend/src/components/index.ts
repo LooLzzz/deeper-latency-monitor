@@ -1,9 +1,9 @@
 import AppShell from './AppShell'
 import CardsManager from './CardsManager'
-import SamplingSettings from './SamplingSettings'
+import AppSettings from './AppSettings'
 
 export {
   AppShell,
   CardsManager,
-  SamplingSettings,
+  AppSettings,
 }

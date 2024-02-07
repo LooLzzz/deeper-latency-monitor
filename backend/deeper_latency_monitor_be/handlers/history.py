@@ -1,4 +1,7 @@
+from typing import Literal
+
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 
 from .. import models, schemas
 
@@ -10,6 +13,26 @@ def get_website_history(db: Session, website_id: int, offset: int = 0, limit: in
               .offset(offset)
               .limit(limit)
               .all())
+
+
+def get_latest_website_history(db: Session, website_id: int, kind: Literal['latest', 'avg']):
+    latest = (db.query(models.MonitoringHistory)
+                .filter(models.MonitoringHistory.website_id == website_id)
+                .order_by(models.MonitoringHistory.created_at.desc())
+                .first())
+
+    if latest and kind == 'avg':
+        avg_latency = (db.query(func.avg(models.MonitoringHistory.latency_ms))
+                         .filter(models.MonitoringHistory.website_id == website_id)
+                         .scalar())
+        return schemas.MonitoringHistoryView(
+            id=latest.id,
+            website_id=website_id,
+            latency_ms=round(avg_latency, 1),
+            created_at=latest.created_at,
+        )
+
+    return latest
 
 
 def create_history_record(db: Session, history: schemas.MonitoringHistoryCreate):

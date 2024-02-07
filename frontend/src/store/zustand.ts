@@ -1,19 +1,19 @@
 import { create } from 'zustand'
 
-type Store = {
-  latencyCheckIntervalMs: number
-  latencyThresholdsMs: {
-    red: number
-    orange: number
-    green: number
-  }
+export interface AppSettingsStore {
+  latencyAggregateType: 'latest' | 'avg'
+  lessAnimations: boolean
+
+  setLatencyAggregateType: (latencyAggregateType: AppSettingsStore['latencyAggregateType']) => void
+  setLessAnimations: (lessAnimations: AppSettingsStore['lessAnimations']) => void
+  toggleLessAnimations: () => void
 }
 
-export const useStore = create<Store>((set) => ({
-  latencyCheckIntervalMs: 1000,
-  latencyThresholdsMs: {
-    red: 500,
-    orange: 250,
-    green: 100,
-  }
+export const useAppSettingsStore = create<AppSettingsStore>((set) => ({
+  latencyAggregateType: 'latest',
+  lessAnimations: false,
+
+  toggleLessAnimations: () => set((state) => ({ lessAnimations: !state.lessAnimations })),
+  setLatencyAggregateType: (latencyAggregateType: AppSettingsStore['latencyAggregateType']) => set({ latencyAggregateType }),
+  setLessAnimations: (lessAnimations: AppSettingsStore['lessAnimations']) => set({ lessAnimations }),
 }))

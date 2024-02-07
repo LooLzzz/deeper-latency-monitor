@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from .. import schemas
@@ -13,14 +15,14 @@ def get_website_history(website_id: int, offset: int = 0, limit: int = 100, db=D
 
 
 @router.get('/{website_id}/latest', response_model=schemas.MonitoringHistoryView)
-def get_latest_website_history(website_id: int, db=Depends(get_db)):
-    res = history_handlers.get_website_history(db, website_id, offset=1, limit=1)
+def get_latest_website_history(website_id: int, kind: Literal['latest', 'avg'] = 'latest', db=Depends(get_db)):
+    res = history_handlers.get_latest_website_history(db, website_id, kind)
     if not res:
         raise HTTPException(
             status_code=404,
             detail=f'No history found for website with id {website_id}',
         )
-    return res[0]
+    return res
 
 
 @router.delete('/{website_id}', response_model=schemas.AffectedRows)
