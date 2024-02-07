@@ -8,7 +8,13 @@
 3. Run the following command in the root directory of the repository to start the application:
 
    ```bash
-    docker compose up
+   docker compose up -d
+   ```
+
+4. For logs use the following command:
+
+   ```bash
+   docker compose logs -f
    ```
 
 ## Usage

@@ -2,16 +2,28 @@
 
 import { useGetMonitorSettings, useUpdateMonitorSettings } from '@/hooks/monitoring'
 import { useAppSettingsStore } from '@/store/zustand'
-import { Center, Group, Card as MantineCard, RangeSlider, Select, Slider, Stack, Switch, Text, Title } from '@mantine/core'
+import { Center, Group, Card as MantineCard, NumberInput, RangeSlider, Slider, Stack, Switch, Text, Title } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { useEffect, useState } from 'react'
 
 export default function AppSettings() {
-  const { lessAnimations, latencyAggregateType, toggleLessAnimations, setLatencyAggregateType } = useAppSettingsStore()
+  const {
+    rollingAverageEnabled,
+    rollingAverageWindow,
+    toggleRollingAverage,
+    setRollingAverageWindow,
+  } = useAppSettingsStore()
+  const [preDebouncedValue, setPreDebouncedValue] = useState(rollingAverageWindow)
+  const [debouncedValue] = useDebouncedValue(preDebouncedValue, 200)
   const { data: settings, isLoading } = useGetMonitorSettings()
   const { mutate } = useUpdateMonitorSettings()
 
   const [sliderValue, setSliderValue] = useState(0)
   const [[lowValue, highValue], setRangeSliderValue] = useState([0, 0])
+
+  useEffect(() => {
+    setRollingAverageWindow(debouncedValue)
+  }, [debouncedValue, setRollingAverageWindow])
 
   useEffect(() => {
     if (settings) {
@@ -29,30 +41,29 @@ export default function AppSettings() {
 
         <Stack gap={'xl'} py='md'>
           <Group wrap='nowrap' gap='xs'>
-            <Text size='sm' style={{ whiteSpace: 'nowrap' }}>
-              Latency aggregate type
-            </Text>
-            <Select
-              w='100%'
-              data={[
-                { value: 'latest', label: 'Latest' },
-                { value: 'avg', label: 'Average' },
-              ]}
-              value={latencyAggregateType}
-              onChange={(value) => setLatencyAggregateType(value as 'latest' | 'avg')}
+            <Group align='baseline' gap={5}>
+              <Text size='sm' style={{ whiteSpace: 'nowrap' }}>
+                Rolling average
+              </Text>
+              <Text c='dimmed' size='xs'>
+                [seconds]
+              </Text>
+            </Group>
+            <Switch
+              checked={rollingAverageEnabled}
+              onChange={() => toggleRollingAverage()}
               disabled={isLoading}
-              placeholder='Select latency aggregate type'
+            />
+            <NumberInput
+              size='xs'
+              disabled={!rollingAverageEnabled || isLoading}
+              w={75}
+              min={1}
+              max={180}
+              value={preDebouncedValue}
+              onChange={(value) => setPreDebouncedValue(Number.parseInt(value.toString()))}
             />
           </Group>
-
-          <Switch
-            checked={lessAnimations}
-            onChange={toggleLessAnimations}
-            label='Use less animations'
-            color='red'
-            labelPosition='left'
-            disabled={isLoading}
-          />
 
           <Group wrap='nowrap' gap='xs'>
             <Text size='sm' style={{ whiteSpace: 'nowrap' }}>

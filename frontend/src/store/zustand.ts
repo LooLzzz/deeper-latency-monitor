@@ -1,19 +1,30 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
 
 export interface AppSettingsStore {
-  latencyAggregateType: 'latest' | 'avg'
   lessAnimations: boolean
+  rollingAverageEnabled: boolean
+  rollingAverageWindow: number
 
-  setLatencyAggregateType: (latencyAggregateType: AppSettingsStore['latencyAggregateType']) => void
-  setLessAnimations: (lessAnimations: AppSettingsStore['lessAnimations']) => void
-  toggleLessAnimations: () => void
+  setRollingAverageWindow: (value: number) => void
+  toggleRollingAverage: (value?: boolean) => void
+  toggleLessAnimations: (value?: boolean) => void
 }
 
-export const useAppSettingsStore = create<AppSettingsStore>((set) => ({
-  latencyAggregateType: 'latest',
-  lessAnimations: false,
+export const useAppSettingsStore = create<AppSettingsStore>()(
+  persist(
+    (set) => ({
+      lessAnimations: false,
+      rollingAverageEnabled: false,
+      rollingAverageWindow: 60,
 
-  toggleLessAnimations: () => set((state) => ({ lessAnimations: !state.lessAnimations })),
-  setLatencyAggregateType: (latencyAggregateType: AppSettingsStore['latencyAggregateType']) => set({ latencyAggregateType }),
-  setLessAnimations: (lessAnimations: AppSettingsStore['lessAnimations']) => set({ lessAnimations }),
-}))
+      setRollingAverageWindow: (value: number) => set({ rollingAverageWindow: value }),
+      toggleRollingAverage: (value?: boolean) => set((state) => ({ rollingAverageEnabled: value ?? !state.rollingAverageEnabled })),
+      toggleLessAnimations: (value?: boolean) => set((state) => ({ lessAnimations: value ?? !state.lessAnimations })),
+    }),
+    {
+      name: 'app-settings',
+    }
+  )
+)

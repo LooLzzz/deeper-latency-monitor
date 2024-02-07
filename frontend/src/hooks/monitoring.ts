@@ -64,7 +64,7 @@ export const useGetWebsiteHistory = (id: number, paginationOptions: PaginationOp
   const queryClient = useQueryClient()
 
   return useQuery<HistoryRecord[]>(
-    ['history', id, paginationOptions].join('-'),
+    ['history', id, paginationOptions],
     async () => {
       const resp = await axios.get<HistoryRecordResponse[]>(
         apiRoutes.getWebsiteHistory(id),
@@ -106,13 +106,35 @@ export const useClearWebsiteHistory = () => {
   )
 }
 
-export const useGetLatestWebsiteHistory = (id: number, kind: 'latest' | 'avg', options: UseQueryOptions<HistoryRecord> = {}) => {
+interface RollingAverageOptions {
+  rollingAverageOptions?: {
+    enabled?: boolean
+    window?: number
+  }
+}
+
+export const useGetLatestWebsiteHistory = (id: number, options: RollingAverageOptions & UseQueryOptions<HistoryRecord> = {}) => {
+  const {
+    rollingAverageOptions = {
+      enabled: false,
+      window: 60
+    },
+    ...restOptions
+  } = options
+
+  const params = {
+    rollingAverageEnabled: rollingAverageOptions.enabled,
+    rollingAverageWindow: rollingAverageOptions?.window,
+  }
+  if (!params.rollingAverageEnabled)
+    delete params.rollingAverageWindow
+
   return useQuery<HistoryRecord>(
-    ['history', id, 'latest', kind],
+    ['history', id, 'latest', params],
     async () => {
       const resp = await axios.get<HistoryRecordResponse>(
         apiRoutes.getLatestWebsiteHistory(id),
-        { params: { kind } },
+        { params },
       )
       return {
         ...resp.data,
@@ -120,7 +142,7 @@ export const useGetLatestWebsiteHistory = (id: number, kind: 'latest' | 'avg', o
       }
     },
     {
-      ...options
+      ...restOptions
     }
   )
 }

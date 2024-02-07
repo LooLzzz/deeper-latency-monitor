@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Self
 
 from pydantic import BaseModel
 
@@ -9,6 +10,23 @@ class SettingsUpdate(BaseModel):
     low_threshold_ms: float | None = None
     high_threshold_ms: float | None = None
     ping_interval_sec: float | None = None
+
+    class Config:
+        alias_generator = toCamelCase
+        allow_population_by_field_name = True
+
+
+class RollingAverageOptions(BaseModel):
+    rolling_average_enabled: bool = False
+    rolling_average_window: int = 60
+
+    @property
+    def enabled(self):
+        return self.rolling_average_enabled
+
+    @property
+    def window(self):
+        return timedelta(seconds=self.rolling_average_window)
 
     class Config:
         alias_generator = toCamelCase
@@ -67,6 +85,16 @@ class MonitoringHistoryView(MonitoringHistoryBase):
 
 class AffectedRows(BaseModel):
     affected_rows: int
+
+    def __add__(self, other: int | Self):
+        match other:
+            case int():
+                return AffectedRows(affected_rows=self.affected_rows + other)
+
+            case AffectedRows():
+                return AffectedRows(affected_rows=self.affected_rows + other.affected_rows)
+
+        raise ValueError(f"Unsupported type for __add__: {type(other)}")
 
     class Config:
         alias_generator = toCamelCase

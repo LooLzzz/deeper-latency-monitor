@@ -19,7 +19,8 @@ export default function EmptyCard({
   const handleCreateCard = () => {
     modals.open({
       title: 'Create a new monitored website',
-      children: <NewCardForm />
+      children: <NewCardForm />,
+      centered: true,
     })
   }
 

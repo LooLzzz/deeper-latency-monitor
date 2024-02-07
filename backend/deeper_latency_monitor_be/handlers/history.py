@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-from typing import Literal
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
@@ -18,17 +17,17 @@ def get_website_history(db: Session, website_id: int, offset: int = 0, limit: in
 
 def get_latest_website_history(db: Session,
                                website_id: int,
-                               kind: Literal['latest', 'avg'],
-                               avg_timeframe: timedelta = timedelta(seconds=120)):
+                               rolling_average_options: schemas.RollingAverageOptions = None):
     latest = (db.query(models.MonitoringHistory)
                 .filter(models.MonitoringHistory.website_id == website_id)
                 .order_by(models.MonitoringHistory.created_at.desc())
                 .first())
 
-    if latest and kind == 'avg':
-        avg_latency = (db.query(func.avg(models.MonitoringHistory.latency_ms))
+    if latest and rolling_average_options and rolling_average_options.enabled:
+        avg_latency_query_func = func.avg(models.MonitoringHistory.latency_ms)
+        avg_latency = (db.query(avg_latency_query_func)
                          .filter(models.MonitoringHistory.website_id == website_id,
-                                 models.MonitoringHistory.created_at > datetime.now() - avg_timeframe)
+                                 models.MonitoringHistory.created_at > datetime.now() - rolling_average_options.window)
                          .scalar())
 
         if avg_latency:
@@ -46,7 +45,6 @@ def create_history_record(db: Session, history: schemas.MonitoringHistoryCreate)
     db_history = models.MonitoringHistory(**history.dict())
     db.add(db_history)
     db.commit()
-    # db.refresh(db_history)  # this hangs indefinitely for some reason
     return db_history
 
 

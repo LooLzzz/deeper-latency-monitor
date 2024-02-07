@@ -38,17 +38,20 @@ export default function Card({
     green: '#1cc95a',
   },
 }: CardProps) {
-  const { latencyAggregateType } = useAppSettingsStore()
+  const { rollingAverageEnabled, rollingAverageWindow } = useAppSettingsStore()
   const { mutate: mutateUpdate } = useUpdateMonitoredWebsite()
   const { mutate: mutateDelete } = useDeleteMonitoredWebsite()
   const { data: settings } = useGetMonitorSettings() as { data: MonitorSettings }
 
   const { data: { latencyMs, createdAt } = {}, isLoading, refetch } = useGetLatestWebsiteHistory(
     websiteId,
-    latencyAggregateType,
     {
       enabled: isActive,
       refetchInterval: settings.pingIntervalSec * 1000, // ms
+      rollingAverageOptions: {
+        enabled: rollingAverageEnabled,
+        window: rollingAverageWindow,
+      },
     }
   )
 
@@ -61,7 +64,7 @@ export default function Card({
           Are you sure you want to delete this website and all its history?
         </Text>
       ),
-      labels: { confirm: 'Yeet', cancel: "Nop" },
+      labels: { confirm: 'Yeet', cancel: 'Nop' },
       confirmProps: { color: 'red' },
       onConfirm: () => mutateDelete(websiteId),
     })
@@ -134,7 +137,7 @@ export default function Card({
           </Group>
 
           <Progress.Root mt={4}>
-            <Tooltip withArrow label={latencyMs ? `Latency: ${latencyMs} ms` : ''}>
+            <Tooltip withArrow label={latencyMs ? `${rollingAverageEnabled ? 'Average ' : ''}Latency: ${latencyMs} ms` : ''}>
               <Progress.Section
                 value={(100 * (latencyMs ?? 0) + settings.lowThresholdMs) / settings.highThresholdMs}
                 color={
@@ -151,7 +154,7 @@ export default function Card({
           </Progress.Root>
 
           <Group>
-            <Tooltip withArrow label='Latency'>
+            <Tooltip withArrow label={`${rollingAverageEnabled ? 'Average ' : ''}Latency`}>
               <IconUpload
                 color='gray'
                 size={16}
